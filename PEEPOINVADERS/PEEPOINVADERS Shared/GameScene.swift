@@ -23,7 +23,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var gameTimer:Timer!
     
-    var possibleEnemies =  ["alien1","alien2","alien3"]
+    var possibleEnemies =  ["enemy1","enemy2"]
     
     let enemyCategory:UInt32 = 0x1 << 1
     let photonEnemyCategory:UInt32 = 0x1 << 0
@@ -41,7 +41,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         starfield.zPosition = -1
         
-        player = SKSpriteNode(imageNamed: "shuttle")
+        player = SKSpriteNode(imageNamed: "spaceShip")
         
         //player.position = CGPoint(x: self.frame.size.width/2, y: player.size.height/2 + 20)
         player.position = CGPoint(x: self.frame.size.width/2, y: self.frame.size.height/2)
@@ -68,8 +68,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         let acceleration = accelerometerData.acceleration
                         self.xAcceleration = CGFloat(acceleration.x) * 0.75 + self.xAcceleration * 0.25
                     }
-        }
-        
+        } 
     }
     
     @objc func addEnemy()
@@ -109,7 +108,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func fireBullet() {
         self.run( SKAction.playSoundFileNamed("torpedo.mp3", waitForCompletion: false))
         
-        let bulletNode = SKSpriteNode(imageNamed: "torpedo")
+        let bulletNode = SKSpriteNode(imageNamed: "bullet")
         bulletNode.position = player.position
         bulletNode.position.y += 5
         
