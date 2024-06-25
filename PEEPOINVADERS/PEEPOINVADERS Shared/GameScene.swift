@@ -29,7 +29,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let photonEnemyCategory:UInt32 = 0x1 << 0
 
     let motionManager = CMMotionManager()
-    var xAcceleration:CGFloat = 0
+    var xAcceleration:CGFloat = 0.1
 
     
     override func didMove(to view: SKView) {
@@ -44,31 +44,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player = SKSpriteNode(imageNamed: "spaceShip")
         
         //player.position = CGPoint(x: self.frame.size.width/2, y: player.size.height/2 + 20)
-        player.position = CGPoint(x: self.frame.size.width/2, y: self.frame.size.height/2)
-
+        player.position = CGPoint(x: self.frame.size.width/2, y: 100)
+        player.zPosition = 1
+        player.setScale(0.5)
+        
         self.addChild(player)
         
         self.physicsWorld.gravity = CGVector(dx: 0, dy: 0)
         self.physicsWorld.contactDelegate = self
         
         scoreLabel = SKLabelNode(text: "Score : 0")
-        scoreLabel.position = CGPoint(x: self.frame.size.width/2, y: self.frame.size.height/2)
+        scoreLabel.position = CGPoint(x: scoreLabel.frame.size.width , y: self.frame.size.height - 100)
         scoreLabel.fontName = "AmericanTypewriter-Bold"
         scoreLabel.fontSize = 36
         scoreLabel.fontColor = UIColor.white
         score = 0
+        scoreLabel.zPosition = 2
         
         self.addChild(scoreLabel)
         
         gameTimer = Timer.scheduledTimer(timeInterval: 0.75, target: self, selector: #selector(addEnemy), userInfo: nil, repeats: true)
         
-        motionManager.accelerometerUpdateInterval = 0.2
-        motionManager.startAccelerometerUpdates(to: OperationQueue.current!) { (data:CMAccelerometerData?, error:Error?) in
-                    if let accelerometerData = data {
-                        let acceleration = accelerometerData.acceleration
-                        self.xAcceleration = CGFloat(acceleration.x) * 0.75 + self.xAcceleration * 0.25
-                    }
-        } 
+        
     }
     
     @objc func addEnemy()
@@ -88,6 +85,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         enemy.physicsBody?.categoryBitMask = enemyCategory
         enemy.physicsBody?.contactTestBitMask = photonEnemyCategory
         enemy.physicsBody?.collisionBitMask = 0
+        
+        enemy.setScale(0.05)
         
         self.addChild(enemy)
         
@@ -120,13 +119,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bulletNode.physicsBody?.collisionBitMask = 0
         bulletNode.physicsBody?.usesPreciseCollisionDetection = true
         
+        bulletNode.setScale(0.05)
+        
         self.addChild(bulletNode)
         
         let animationDuration:TimeInterval = 0.3
         
         var actionArray = [SKAction]()
         
-        actionArray.append(SKAction.move(to: CGPoint(x: player.position.x, y: self.frame.size.height + 10), duration: animationDuration))
+        actionArray.append(SKAction.move(to: CGPoint(x: player.position.x, y: self.frame.size.height + 1), duration: animationDuration))
         actionArray.append(SKAction.removeFromParent())
         
         bulletNode.run(SKAction.sequence(actionArray))
@@ -171,17 +172,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     }
 
-    override func didSimulatePhysics() {
-        player.position.x += xAcceleration * 50
-
-        if player.position.x < -20{
-         player.position = CGPoint(x: self.size.width + 20,y: player.position.y)
-        }
-        else if player.position.x > self.size.width + 20 {
-            player.position = CGPoint(x: -20, y: player.position.y)
-
-        }
-    }
+    
     
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
