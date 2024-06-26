@@ -29,7 +29,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let photonEnemyCategory:UInt32 = 0x1 << 0
 
     let motionManager = CMMotionManager()
-    var xAcceleration:CGFloat = 0.1
+    var xAcceleration:CGFloat = 1
 
     
     override func didMove(to view: SKView) {
@@ -43,8 +43,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         player = SKSpriteNode(imageNamed: "spaceShip")
         
-        //player.position = CGPoint(x: self.frame.size.width/2, y: player.size.height/2 + 20)
-        player.position = CGPoint(x: self.frame.size.width/2, y: 100)
+        player.position = CGPoint(x: self.frame.size.width/2, y: 200)
         player.zPosition = 1
         player.setScale(0.5)
         
@@ -101,8 +100,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        fireBullet()
     }
+    
     
     func fireBullet() {
         self.run( SKAction.playSoundFileNamed("torpedo.mp3", waitForCompletion: false))
@@ -171,7 +170,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         score += 5
 
     }
+    
+    func MoveLeft()
+    {
+        if player.position.x - player.size.width/2 > 0{
+            player.position.x -= xAcceleration
+        }
+    }
+    
+    func MoveRight()
+    {
+        if player.position.x + player.size.width/2 < self.frame.size.width{
+            player.position.x += xAcceleration
+        }
+    }
+    
+    func ShootSpecial()
+    {
+        
+    }
 
+    
     
     
     override func update(_ currentTime: TimeInterval) {
