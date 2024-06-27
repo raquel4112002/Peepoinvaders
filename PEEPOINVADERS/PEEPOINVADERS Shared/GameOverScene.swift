@@ -8,7 +8,9 @@
 import SpriteKit
 
 class GameOverScene: SKScene {
+    weak var gameViewController: GameViewController?
 
+    
     override func didMove(to view: SKView) {
         let background = SKSpriteNode(imageNamed: "gameOverBackground")
         background.position = CGPoint(x: self.frame.size.width / 2, y: self.frame.size.height / 2)
@@ -36,8 +38,12 @@ class GameOverScene: SKScene {
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         let transition = SKTransition.flipHorizontal(withDuration: 0.5)
-        let gameScene = GameScene(size: self.size)
-        self.view?.presentScene(gameScene, transition: transition)
+               let gameScene = GameScene(size: self.size)
+               gameScene.scaleMode = .aspectFill
+               gameScene.gameViewController = gameViewController // Set the reference
+               self.view?.presentScene(gameScene, transition: transition)
+               
+               gameViewController?.EnableButtons() // Re-enable buttons
+        
     }
 }
-
