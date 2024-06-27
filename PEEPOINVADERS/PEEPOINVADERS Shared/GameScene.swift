@@ -448,11 +448,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func ShootSpecial()
     {
         if specialValue >= 50 {
-            print("boom")
-            self.run( SKAction.playSoundFileNamed("torpedo.mp3", waitForCompletion: false))
+            self.run( SKAction.playSoundFileNamed("special.mp3", waitForCompletion: false))
             
             let special = SKSpriteNode(imageNamed: "bullet")
-            //let special = SKNode()
+
             special.size.height = 0.0001
             special.position = player.position
             
@@ -474,7 +473,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             actionArray.append(SKAction.removeFromParent())
             
             special.run(SKAction.sequence(actionArray))
-            specialValue = 0
+            specialValue -= 50
         }
     }
 
