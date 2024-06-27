@@ -323,15 +323,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     func DestroyEnemy(enemy:SKSpriteNode){
             enemy.removeFromParent()
-        print("Begone ni")
     }
     func DestroyPowerUp(powerUp:SKSpriteNode){
             powerUp.removeFromParent()
-        print("Begone gg")
     }
     func DestroyBullet(bullet:SKSpriteNode){
             bullet.removeFromParent()
-        print("Begone er")
     }
 
     
