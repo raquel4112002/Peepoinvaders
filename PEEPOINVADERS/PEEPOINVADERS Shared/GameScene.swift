@@ -20,6 +20,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         static let bottomBoundaryCategory: UInt32 = 0x1 << 4
         static let special: UInt32 = 0x1 << 5
     }
+
+    var bgmPlayer:AVAudioPlayer?
     
     var starfield:SKEmitterNode!
     var player:SKSpriteNode!
@@ -66,6 +68,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     
     override func didMove(to view: SKView) {
+
+        bgmPlayer = self.makePlayer("bgmMusic", ofType: "mp3")!
+        bgmPlayer?.numberOfLoops = Int.max
+        bgmPlayer?.volume = 0.1
         
         difficultyLevel = 0
         
@@ -369,6 +375,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func GameOver() {
+        bgmPlayer?.stop()
         let transition = SKTransition.flipHorizontal(withDuration: 0.5)
         let gameOverScene = GameOverScene(size: self.size)
         self.view?.presentScene(gameOverScene, transition: transition)
