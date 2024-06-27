@@ -14,14 +14,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     struct PhysicsCategory {
         static let none: UInt32 = 0
         static let player: UInt32 = 0x1 << 0 // 1
-        static let enemy: UInt32 = 0x1 << 1  // 2
-        static let bullet: UInt32 = 0x1 << 2 // 4
+        static let enemy: UInt32 = 0x1 << 2  // 4
+        static let bullet: UInt32 = 0x1 << 1 // 2
         static let powerUp: UInt32 = 0x1 << 3 // 8
     }
     
     var starfield:SKEmitterNode!
     var player:SKSpriteNode!
 
+    var livesLabel:SKLabelNode!
+    var lives:Int = 5 {
+        didSet{
+            livesLabel.text = "Lives: \(lives)"
+        }
+    }
+    
     var scoreLabel:SKLabelNode!
     var score:Int = 0 {
         didSet {
@@ -32,13 +39,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var enemySpawnTimer:Timer!
     var powerUpSpawnTimer:Timer!
     var difficultyTimer:Timer!
-    var difficultyLevel : Double = 0
+    var difficultyLevel:Double = 0
+    var peepoStarTimerStart:Timer!
+    var peepoStarTimerStop:Timer!
+    var peepoStartTimer:TimeInterval = 5
     
     var possibleEnemies =  ["enemy1","enemy2"]
-    var possiblePowerUp = ["player"]
-    
-    let enemyCategory:UInt32 = 0x1 << 1
-    let photonEnemyCategory:UInt32 = 0x1 << 0
+    var possiblePowerUp = ["peepoStar", "peepoHeart"]
 
     let motionManager = CMMotionManager()
     var xAcceleration:CGFloat = 1
@@ -70,17 +77,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.physicsWorld.contactDelegate = self
         
         scoreLabel = SKLabelNode(text: "Score : 0")
-        scoreLabel.position = CGPoint(x: scoreLabel.frame.size.width , y: self.frame.size.height - 100)
+        scoreLabel.position = CGPoint(x: scoreLabel.frame.size.width / 2 , y: self.frame.size.height - 100)
         scoreLabel.fontName = "AmericanTypewriter-Bold"
-        scoreLabel.fontSize = 36
+        scoreLabel.fontSize = 25
         scoreLabel.fontColor = UIColor.white
         score = 0
         scoreLabel.zPosition = 2
         
         self.addChild(scoreLabel)
         
-        enemySpawnTimer = Timer.scheduledTimer(timeInterval: (5 - difficultyLevel), target: self, selector: #selector(addEnemy), userInfo: nil, repeats: true)
-        powerUpSpawnTimer = Timer.scheduledTimer(timeInterval: 20, target: self, selector: #selector(addPowerUp), userInfo: nil, repeats: true)
+        livesLabel = SKLabelNode(text: "Lives : 0")
+        livesLabel.position = CGPoint(x: scoreLabel.frame.size.width / 2 + 10, y: self.frame.size.height - 150)
+        livesLabel.fontName = "AmericanTypewriter-Bold"
+        livesLabel.fontSize = 25
+        livesLabel.fontColor = UIColor.white
+        lives = 5
+        livesLabel.zPosition = 2
+        
+        self.addChild(livesLabel)
+        
+        enemySpawnTimer = Timer.scheduledTimer(timeInterval: (0.75), target: self, selector: #selector(addEnemy), userInfo: nil, repeats: true)
+        powerUpSpawnTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(addPowerUp), userInfo: nil, repeats: true)
         
         difficultyTimer = Timer.scheduledTimer(timeInterval: 10, target: self, selector: #selector(difficulty), userInfo: nil, repeats: true)
     }
@@ -100,6 +117,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         let randomEnemyPosition = GKRandomDistribution(lowestValue: 0, highestValue: 414)
         let position = CGFloat(randomEnemyPosition .nextInt())
+        
+        if position < 0{
+            enemy.position = CGPoint(x: position + enemy.frame.size.width/2, y: self.frame.size.height + enemy.size.height)
+        }
+        else if position > self.frame.size.width {
+            enemy.position = CGPoint(x: position - enemy.frame.size.width/2, y: self.frame.size.height + enemy.size.height)
+        }
         
         enemy.position = CGPoint(x: position, y: self.frame.size.height + enemy.size.height)
         
@@ -122,6 +146,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         actionArray.append(SKAction.removeFromParent())
         
         enemy.run(SKAction.sequence(actionArray))
+    }
+    
+    @objc func fire() {
+        fireBullet()
     }
     
     func fireBullet() {
@@ -159,6 +187,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         let powerUp = SKSpriteNode(imageNamed: possiblePowerUp[0])
         
+        powerUp.name = possiblePowerUp[0] as String
+        
+        if powerUp.name == "peepoHeart"{
+            powerUp.setScale(0.5)
+
+        }
+        if powerUp.name == "peepoStar"{
+            powerUp.setScale(0.5)
+        }
+        
         let randomPowerUpPosition = GKRandomDistribution(lowestValue: 0, highestValue: 500)
         let position = CGFloat(randomPowerUpPosition .nextInt())
         
@@ -170,9 +208,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         powerUp.physicsBody?.categoryBitMask = PhysicsCategory.powerUp
         powerUp.physicsBody?.collisionBitMask = PhysicsCategory.none
         powerUp.physicsBody?.contactTestBitMask = PhysicsCategory.player | PhysicsCategory.bullet
-        
-        powerUp.setScale(1)
-        
+                        
         self.addChild(powerUp)
         
         let animationDuration:TimeInterval = 6
@@ -198,28 +234,30 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             secondBody = contact.bodyA
         }
 
-        if (firstBody.categoryBitMask & photonEnemyCategory) != 0 && (secondBody.categoryBitMask & enemyCategory) != 0
-        {
-            BulletDidCollideWithEnemy(bulletNode: firstBody.node as! SKSpriteNode, enemyNode: secondBody.node as! SKSpriteNode)
+        if (firstBody.categoryBitMask & PhysicsCategory.bullet) != 0 && (secondBody.categoryBitMask & PhysicsCategory.enemy) != 0 {
+            BulletDidCollideWithEnemy(bullet: firstBody.node as! SKSpriteNode, enemy: secondBody.node as! SKSpriteNode)
         }
-        else if (firstBody.categoryBitMask & PhysicsCategory.bullet != 0) &&
-                  (secondBody.categoryBitMask & PhysicsCategory.enemy != 0) {
-            BulletDidCollideWithEnemy(bulletNode: firstBody.node as! SKSpriteNode, enemyNode: secondBody.node as! SKSpriteNode)
-        } else if (firstBody.categoryBitMask & PhysicsCategory.player != 0) &&
-                  (secondBody.categoryBitMask & PhysicsCategory.powerUp != 0) {
+        else if (firstBody.categoryBitMask & PhysicsCategory.player) != 0 && (secondBody.categoryBitMask & PhysicsCategory.enemy) != 0 {
+            PlayerDidCollideWithEnemy(player: firstBody.node as! SKSpriteNode, enemy: secondBody.node as! SKSpriteNode)
+        }
+        else if (firstBody.categoryBitMask & PhysicsCategory.player) != 0 && (secondBody.categoryBitMask & PhysicsCategory.powerUp) != 0 {
             PlayerDidCollideWithPowerUp(player: firstBody.node as! SKSpriteNode, powerUp: secondBody.node as! SKSpriteNode)
+        }
+        else if (firstBody.categoryBitMask & PhysicsCategory.bullet) != 0 && (secondBody.categoryBitMask & PhysicsCategory.powerUp) != 0 {
+            BulletDidCollideWithPowerUp(bullet: firstBody.node as! SKSpriteNode, powerUp: secondBody.node as! SKSpriteNode)
         }
     }
 
-    func BulletDidCollideWithEnemy (bulletNode:SKSpriteNode, enemyNode:SKSpriteNode){
+    func BulletDidCollideWithEnemy (bullet:SKSpriteNode, enemy:SKSpriteNode){
+        
         let explosion = SKEmitterNode(fileNamed: "Explosion")!
-        explosion.position = enemyNode.position
+        explosion.position = enemy.position
         self.addChild(explosion)
 
         self.run(SKAction.playSoundFileNamed("explosion.mp3", waitForCompletion: false))
 
-        bulletNode.removeFromParent()
-        enemyNode.removeFromParent()
+        bullet.removeFromParent()
+        enemy.removeFromParent()
 
         self.run(SKAction.wait(forDuration: 2)){
             explosion.removeFromParent()
@@ -229,13 +267,66 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func PlayerDidCollideWithEnemy(player: SKSpriteNode, enemy: SKSpriteNode) {
-            // Handle player and enemy collision
-            print("Player collided with enemy")
+        // Handle player and enemy collision
+        print("Player collided with enemy")
+        let explosion = SKEmitterNode(fileNamed: "Explosion")!
+        explosion.position = enemy.position
+        self.addChild(explosion)
+        self.run(SKAction.playSoundFileNamed("explosion.mp3", waitForCompletion: false))
+        enemy.removeFromParent()
+        self.run(SKAction.wait(forDuration: 2)){
+            explosion.removeFromParent()
         }
+        
+        score += 5
+        
+        lives -= 1
+        if lives <= 0 {
+            player.removeFromParent()
+        }
+    }
     
     func PlayerDidCollideWithPowerUp(player: SKSpriteNode, powerUp: SKSpriteNode) {
             // Handle player and power-up collision
             print("Player collided with power-up")
+        powerUp.removeFromParent()
+        if powerUp.name == "peepoHeart"{
+            lives += 1
+        }
+        if powerUp.name == "peepoStar"{
+            peepoStarStart()
+            peepoStarStop(seconds: peepoStartTimer)
+        }
+            
+        }
+    
+    func peepoStarStart () {
+        peepoStarTimerStart = Timer.scheduledTimer(timeInterval: 0.2, target: self, selector: #selector(fire), userInfo: nil, repeats: true)
+    }
+    
+    func peepoStarStop(seconds: TimeInterval) {
+        peepoStarTimerStop = Timer.scheduledTimer(timeInterval: seconds, target: self, selector: #selector(peepoStarStoping), userInfo: nil, repeats: false)
+    }
+
+    @objc func peepoStarStoping() {
+        peepoStarTimerStart?.invalidate()
+        peepoStarTimerStart = nil
+    }
+    
+    
+    
+    func BulletDidCollideWithPowerUp(bullet: SKSpriteNode, powerUp: SKSpriteNode) {
+            // Handle player and power-up collision
+            print("Player collided with power-up")
+            let explosion = SKEmitterNode(fileNamed: "Explosion")!
+            explosion.position = powerUp.position
+            self.addChild(explosion)
+            self.run(SKAction.playSoundFileNamed("explosion.mp3", waitForCompletion: false))
+            bullet.removeFromParent()
+            powerUp.removeFromParent()
+            self.run(SKAction.wait(forDuration: 2)){
+                explosion.removeFromParent()
+            }
         }
     
     
@@ -258,9 +349,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
     }
 
-    
-    
-    
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
     }
