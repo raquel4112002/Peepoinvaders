@@ -10,7 +10,6 @@ import SpriteKit
 import GameplayKit
 
 class GameViewController: UIViewController {
-
     
     var scene: GameScene!
     var timer: Timer?
@@ -33,6 +32,12 @@ class GameViewController: UIViewController {
             view.showsFPS = true
             view.showsNodeCount = true
         }
+        
+        EnableButtons()
+    }
+    
+    func EnableButtons () {
+        view.subviews.forEach { if $0 is UIButton { $0.removeFromSuperview() } }
         
         let shootBtn = UIButton()
         shootBtn.setTitle("Shoot", for: .normal)
@@ -68,9 +73,7 @@ class GameViewController: UIViewController {
         view.addSubview(special)
         special.frame = CGRect(x: view.bounds.size.width - 100 , y: view.bounds.size.height - 175, width: 100, height: 50)
         special.addTarget(self, action: #selector(ShootSpecial), for: .touchUpInside)
-        
     }
-    
     
     
     @objc func ShootBullet() {
@@ -107,7 +110,20 @@ class GameViewController: UIViewController {
         scene.ShootSpecial()
     }
     
-
+    
+    func restartGame() {
+            if let view = self.view as! SKView? {
+                let scene = GameScene(size: view.bounds.size)
+                scene.scaleMode = .aspectFill
+                scene.gameViewController = self // Set the reference
+                
+                view.presentScene(scene, transition: SKTransition.crossFade(withDuration: 0.5))
+                EnableButtons() // Re-enable buttons
+            }
+        }
+    
+    
+    
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         if UIDevice.current.userInterfaceIdiom == .phone {
             return .allButUpsideDown
