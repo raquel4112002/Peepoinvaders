@@ -31,6 +31,7 @@ class GameViewController: UIViewController {
             
             view.showsFPS = true
             view.showsNodeCount = true
+            timer?.invalidate()
         }
         
         EnableButtons()
@@ -116,9 +117,9 @@ class GameViewController: UIViewController {
                 let scene = GameScene(size: view.bounds.size)
                 scene.scaleMode = .aspectFill
                 scene.gameViewController = self // Set the reference
+                print(scene)
                 
                 view.presentScene(scene, transition: SKTransition.crossFade(withDuration: 0.5))
-                EnableButtons() // Re-enable buttons
             }
         }
     
