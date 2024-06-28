@@ -8,6 +8,7 @@
 import SpriteKit
 import GameplayKit
 import CoreMotion
+import AVFoundation
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
@@ -22,6 +23,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     var bgmPlayer:AVAudioPlayer?
+    var specialPlayer:AVAudioPlayer?
     
     var starfield:SKEmitterNode!
     var player:SKSpriteNode!
@@ -69,9 +71,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func didMove(to view: SKView) {
 
-        bgmPlayer = self.makePlayer("bgmMusic", ofType: "mp3")!
+        bgmPlayer = makePlayer("bgmMusic", ofType: "mp3")!
         bgmPlayer?.numberOfLoops = Int.max
-        bgmPlayer?.volume = 0.1
+        bgmPlayer?.volume = 1
+        bgmPlayer?.play()
+        
+        
+        specialPlayer = makePlayer("special", ofType: "mp3")
+        specialPlayer?.numberOfLoops = 0
+        specialPlayer?.volume = 5
         
         difficultyLevel = 0
         
@@ -109,7 +117,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         player = SKSpriteNode(imageNamed: "spaceShip")
         
-        player.position = CGPoint(x: self.frame.size.width/2, y: 200)
+        player.position = CGPoint(x: frame.midX, y: 200)
         player.zPosition = 1
         player.setScale(0.5)
         
@@ -138,7 +146,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         livesLabel.fontName = "AmericanTypewriter-Bold"
         livesLabel.fontSize = 25
         livesLabel.fontColor = UIColor.white
-        lives = 500
+        lives = 1
         livesLabel.zPosition = 2
         
         self.addChild(livesLabel)
@@ -366,13 +374,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         lives -= 1
         if lives <= 0 {
-            player.removeFromParent()
             GameOver()
         }
     }
     
     func GameOver() {
         bgmPlayer?.stop()
+        enemySpawnTimer?.invalidate()
+        powerUpSpawnTimer?.invalidate()
+        difficultyTimer?.invalidate()
+        peepoStarTimerStop?.invalidate()
+        peepoStarTimerStart?.invalidate()
+        
+        player.removeAllActions()
+        player.removeFromParent()
+        
+        
         let transition = SKTransition.flipHorizontal(withDuration: 0.5)
         let gameOverScene = GameOverScene(size: self.size)
         self.view?.presentScene(gameOverScene, transition: transition)
@@ -420,8 +437,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         peepoStarTimerStart = nil
     }
     
-    
-    
     func BulletDidCollideWithPowerUp(bullet: SKSpriteNode, powerUp: SKSpriteNode) {
             let explosion = SKEmitterNode(fileNamed: "Explosion")!
             explosion.position = powerUp.position
@@ -434,11 +449,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
     
-    
     func MoveLeft()
     {
+        print(player.position.x)
+        print(player.size.width)
         if player.position.x - player.size.width/2 > 0{
             player.position.x -= xAcceleration
+            player.xScale = -abs(player.xScale)
         }
     }
     
@@ -446,14 +463,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     {
         if player.position.x + player.size.width/2 < self.frame.size.width{
             player.position.x += xAcceleration
+            player.xScale = abs(player.xScale)
         }
     }
     
     func ShootSpecial()
     {
         if specialValue >= 50 {
-            self.run( SKAction.playSoundFileNamed("special.mp3", waitForCompletion: false))
-            
+            //self.run( SKAction.playSoundFileNamed("special.mp3", waitForCompletion: false))
+            specialPlayer?.play()
+
             let special = SKSpriteNode(imageNamed: "bullet")
 
             special.size.height = 0.0001
@@ -480,10 +499,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             specialValue -= 50
         }
     }
+    
+    func makePlayer(_ name:String, ofType:String) -> AVAudioPlayer? {
+            if let path = Bundle.main.path(forResource: name, ofType: ofType) {
+                let url = URL(fileURLWithPath: path)
+                do {
+                    return try AVAudioPlayer(contentsOf: url)
+                } catch {}
+            }
+            return nil
+        }
 
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
-        
+
     }
 }
-
