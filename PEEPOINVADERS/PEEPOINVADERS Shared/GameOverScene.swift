@@ -38,12 +38,13 @@ class GameOverScene: SKScene {
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         let transition = SKTransition.flipHorizontal(withDuration: 0.5)
-               let gameScene = GameScene(size: self.size)
-               gameScene.scaleMode = .aspectFill
-               gameScene.gameViewController = gameViewController // Set the reference
-               self.view?.presentScene(gameScene, transition: transition)
-               
-               gameViewController?.EnableButtons() // Re-enable buttons
+        let gameScene = GameScene(size: self.size)
+        gameViewController?.scene = gameScene
+        gameScene.scaleMode = .aspectFill
+        
+        
+        self.view?.presentScene(gameScene, transition: transition)
+
         
     }
 }
